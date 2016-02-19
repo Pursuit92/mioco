@@ -1,5 +1,5 @@
 use super::{RW,};
-use super::evented::{RcEventSource, Evented, EventedImpl, MioAdapter};
+use super::evented::{Evented, EventedImpl, MioAdapter};
 use std::io;
 use super::mio_orig;
 use std::path::Path;
@@ -12,27 +12,14 @@ pub type PipeReader = MioAdapter<mio_orig::unix::PipeReader>;
 pub type PipeWriter = MioAdapter<mio_orig::unix::PipeWriter>;
 
 /// Unix listener
-pub struct UnixListener(RcEventSource<mio_orig::unix::UnixListener>);
-
-impl EventedImpl for UnixListener {
-    type Raw = mio_orig::unix::UnixListener;
-
-    fn shared(&self) -> &RcEventSource<Self::Raw> {
-        &self.0
-    }
-}
-
+pub type UnixListener = MioAdapter<mio_orig::unix::UnixListener>;
 
 impl UnixListener {
-    /// Bind to a port
-    pub fn bind<P: AsRef<Path> + ?Sized>(addr: &P) -> io::Result<Self> {
-        mio_orig::unix::UnixListener::bind(addr).map(|t| UnixListener(RcEventSource::new(t)))
+    /// Bind to a path
+    pub fn bind(addr: &Path) -> io::Result<Self> {
+        mio_orig::unix::UnixListener::bind(addr).map(|t| MioAdapter::new(t))
     }
-
-    /// Try cloning the socket descriptor.
-    pub fn try_clone(&self) -> io::Result<Self> {
-        self.shared().io_ref().try_clone().map(|t| UnixListener(RcEventSource::new(t)))
-    }
+ 
 }
 
 /// Unix socket
